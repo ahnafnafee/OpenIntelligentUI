@@ -249,7 +249,9 @@ function layoutClosed(input: ProcessInput, measure: Measure): ProcessLayout {
     const ok = placeLabels(links, labels, boxes, [W / 2, H / 2]);
     const layout = normalize({ width: 0, height: 0, boxes, links, zones: [] }, headHeight);
     layout.zones = layoutZones(layout, input, measure);
-    if (ok && layout.width <= input.maxWidth && checkProcessLayout(layout, input, measure).length === 0) return layout;
+    // Only the vertical gap grows once a loop is too wide, which stretches it
+    // without narrowing it, so a clean but wide loop is the best this gets.
+    if (ok && fitsExceptWidth(layout, input, measure)) return layout;
     fallback = layout;
     if (layout.width + 32 <= input.maxWidth) gapH += 16;
     gapV += 16;
@@ -264,7 +266,8 @@ function layoutOpen(input: ProcessInput, measure: Measure): ProcessLayout {
   const limit = input.maxWidth - 2 * MARGIN;
   let gap = 64;
   let rowGap = 56;
-  let fallback: ProcessLayout | undefined;
+  let compact: ProcessLayout | undefined;
+  let last: ProcessLayout | undefined;
   for (let attempt = 0; attempt < 48; attempt++) {
     const centers: Point[] = [];
     const rowOf: number[] = [];
@@ -300,12 +303,22 @@ function layoutOpen(input: ProcessInput, measure: Measure): ProcessLayout {
     });
     const ok = placeLabels(links, labels, boxes, undefined);
     const layout = normalize({ width: 0, height: 0, boxes, links, zones: [] }, 0);
-    if (ok && layout.width <= input.maxWidth && checkProcessLayout(layout, input, measure).length === 0) return layout;
-    fallback = layout;
+    // A wider gap can wrap a row earlier, so keep looking for a fit but fall back
+    // to the first clean layout rather than the most stretched one.
+    if (ok && fitsExceptWidth(layout, input, measure)) {
+      if (layout.width <= input.maxWidth) return layout;
+      compact ??= layout;
+    }
+    last = layout;
     gap += 16;
     rowGap += 16;
   }
-  return fallback!;
+  return compact ?? last!;
+}
+
+// True when the only problem is exceeding maxWidth, which the SVG absorbs by scaling down.
+function fitsExceptWidth(layout: ProcessLayout, input: ProcessInput, measure: Measure) {
+  return checkProcessLayout(layout, input, measure).every((p) => p.startsWith("width "));
 }
 
 export function layoutProcess(input: ProcessInput, measure: Measure): ProcessLayout {

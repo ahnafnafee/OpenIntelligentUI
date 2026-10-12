@@ -106,6 +106,22 @@ describe("layoutProcess placement", () => {
     expect(checkProcessLayout(covered, fridge, measure).some((p) => p.includes("label of link 0 overlaps box"))).toBe(true);
   });
 
+  it("keeps a too-wide cycle compact so it can scale down on a phone", () => {
+    const wide = layoutProcess(fridge, measure);
+    const narrow = { ...fridge, maxWidth: 300 };
+    const layout = layoutProcess(narrow, measure);
+    expect(layout.height).toBeLessThanOrEqual(wide.height * 1.2);
+    expect(checkProcessLayout(layout, narrow, measure).filter((p) => !p.startsWith("width"))).toEqual([]);
+  });
+
+  it("keeps an open flow compact when one box is wider than the space", () => {
+    const flow: ProcessInput = { ...fridge, closed: false, zones: [], links: fridge.links.slice(0, 3), maxWidth: 120 };
+    const layout = layoutProcess(flow, measure);
+    const roomy = layoutProcess({ ...flow, maxWidth: 680 }, measure);
+    expect(layout.height).toBeLessThanOrEqual(roomy.height * 3);
+    expect(checkProcessLayout(layout, flow, measure).filter((p) => !p.startsWith("width"))).toEqual([]);
+  });
+
   it("chains an open flow without a closing link", () => {
     const flow: ProcessInput = { ...fridge, closed: false, zones: [], links: fridge.links.slice(0, 3) };
     const layout = layoutProcess(flow, measure);
