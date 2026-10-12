@@ -276,6 +276,18 @@ The server is a standard Node.js application and can be deployed to:
 - **AWS Lambda**: Package with Node.js runtime
 - **Google Cloud Run**: Use Dockerfile
 
+### Cloudflare Workers (claude.ai connector on web, desktop and mobile)
+
+Desktop extensions only run in Claude Desktop and Claude Code. To get the inline views in claude.ai and the Claude mobile apps, host the server at a public URL and add it as a custom connector. `src/worker.ts` is a stateless Workers entry that requires a bearer token and refuses every request until one is configured.
+
+```bash
+pnpm build:worker                        # bundles the kit and skills into dist/worker.bundle.js
+npx wrangler@4 deploy                    # uses wrangler.jsonc
+npx wrangler@4 secret put MCP_TOKEN      # paste a long random token
+```
+
+Then in claude.ai, open **Customize > Connectors > Add custom connector**, enter `https://<worker>.workers.dev/mcp`, choose **No sign in**, and add the request header `Authorization: Bearer <token>`. For local testing, put `MCP_TOKEN=...` in `.dev.vars` and run `npx wrangler@4 dev`.
+
 ## Development
 
 ### Project Structure
@@ -287,11 +299,15 @@ apps/mcp/
 ├── .env.example         # Configuration template
 ├── Dockerfile           # Container definition
 ├── skills/              # Skill instruction files (copied from source)
+├── wrangler.jsonc       # Cloudflare Workers deployment
 ├── scripts/
-│   └── build-kit.mjs    # Bundles the browser kit into dist/kit.js
+│   ├── build-kit.mjs    # Bundles the browser kit into dist/kit.js
+│   └── build-worker.mjs # Bundles the Workers entry with the kit and skills inlined
 └── src/
     ├── index.ts         # HTTP server entry point (Hono)
     ├── stdio.ts         # stdio transport entry point (Claude Desktop)
+    ├── worker.ts        # Cloudflare Workers entry point
+    ├── remote.ts        # Bearer-token check and stateless MCP handler for remote hosts
     ├── server.ts        # MCP server construction (shared)
     ├── skills.ts        # Skill file loader
     ├── renderer.ts      # Design system CSS, assembleDocument, MCP Apps views

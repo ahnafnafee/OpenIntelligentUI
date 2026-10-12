@@ -147,13 +147,19 @@ export const MCP_APP_VIEW_HTML = viewHtml("", `
     };`);
 
 let kitJs: string | undefined;
+const inlineSafe = (js: string) => js.replace(/<\/script/gi, "<\\/script");
+
+// Hosts without a filesystem (Cloudflare Workers) register the kit bundle at startup.
+export function useBundledKit(js: string) {
+  kitJs = inlineSafe(js);
+}
 
 // The browser kit is prebuilt by scripts/build-kit.mjs and inlined into each view.
 function kitScript(): string {
   if (kitJs === undefined) {
     const file = new URL("../dist/kit.js", import.meta.url);
     try {
-      kitJs = readFileSync(file, "utf8").replace(/<\/script/gi, "<\\/script");
+      kitJs = inlineSafe(readFileSync(file, "utf8"));
     } catch {
       throw new Error(`Kit bundle not found at ${fileURLToPath(file)}; run "pnpm build:kit" in apps/mcp`);
     }

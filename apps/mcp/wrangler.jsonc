@@ -1,0 +1,11 @@
+// Remote deployment for claude.ai custom connectors (web, desktop and mobile).
+// Build with `pnpm build:worker`, then `npx wrangler deploy`; set the bearer
+// token once with `npx wrangler secret put MCP_TOKEN`.
+{
+  "name": "open-generative-ui-mcp",
+  "main": "dist/worker.bundle.js",
+  "no_bundle": true,
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true }
+}
