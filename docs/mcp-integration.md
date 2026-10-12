@@ -13,6 +13,7 @@ The MCP server lives in `apps/mcp/`.
 | `skills://list` | JSON array of available skill names |
 | `skills://{name}` | Full text of an individual skill document |
 | `ui://open-generative-ui/document.html` | MCP Apps view that renders `assemble_document` output inline (Claude Desktop and other MCP Apps hosts) |
+| `ui://open-generative-ui/kit/{component}.html` | MCP Apps views for the component kit tools (`process`, `model`, `simulation`, `parts`) |
 
 ### Prompts
 
@@ -27,6 +28,10 @@ The MCP server lives in `apps/mcp/`.
 | Name | Description |
 |------|-------------|
 | `assemble_document` | Wraps an HTML fragment with the full design system (CSS variables, SVG classes, form styles, bridge JS) |
+| `show_process` | Draws a cycle or flow the user steps through, from a short JSON spec; the kit computes the layout |
+| `show_model` | Draws sliders, live numbers, and a chart from input ranges and formulas |
+| `show_simulation` | Runs a repeatable probability experiment whose results converge on the expected rates |
+| `show_parts` | Shows how a whole splits into parts, with a switcher between cases |
 
 ## Running the MCP Server
 

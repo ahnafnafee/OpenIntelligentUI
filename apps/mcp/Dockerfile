@@ -17,6 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source
 COPY tsconfig.json ./
+COPY scripts ./scripts
 COPY src ./src
 COPY skills ./skills
 

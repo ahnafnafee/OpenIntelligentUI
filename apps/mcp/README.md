@@ -4,11 +4,12 @@ A standalone, independently deployable [Model Context Protocol](https://modelcon
 
 ## Features
 
-- **Design System Tool** — `assemble_document` wraps HTML fragments with OpenGenerativeUI's complete CSS design system and bridge JavaScript
-- **Skill Resources** — Browse and read skill instruction documents via `skills://list` and `skills://{name}`
-- **Prompt Templates** — Pre-composed prompts for common visualization tasks: `create_widget`, `create_svg_diagram`, `create_visualization`
-- **Standalone** — No dependencies on other packages; can be deployed independently
-- **Configurable** — Environment variables for port, CORS origins, skills directory, and logging
+- **Design System Tool**: `assemble_document` wraps HTML fragments with OpenGenerativeUI's complete CSS design system and bridge JavaScript
+- **Component Kit**: `show_process`, `show_model`, `show_simulation`, and `show_parts` turn short JSON specs into interactive visuals that render inline in MCP Apps hosts, with layout computed by the kit
+- **Skill Resources**: Browse and read skill instruction documents via `skills://list` and `skills://{name}`
+- **Prompt Templates**: Pre-composed prompts for common visualization tasks: `create_widget`, `create_svg_diagram`, `create_visualization`
+- **Standalone**: No dependencies on other packages; can be deployed independently
+- **Configurable**: Environment variables for port, CORS origins, skills directory, and logging
 
 ## Quick Start
 
@@ -160,6 +161,32 @@ const result = await client.callTool("assemble_document", {
 // Render in: <iframe sandbox="allow-scripts allow-same-origin" srcdoc={result.content[0].text} />
 ```
 
+### Component kit tools
+
+Four tools take a short JSON spec and render a finished, interactive visual through their own MCP Apps view, `ui://open-generative-ui/kit/{component}.html`. The model describes the content; the kit does the drawing, so boxes fit their text, connectors are orthogonal with fixed-size arrowheads that stop at box edges, and labels never cover boxes or lines.
+
+| Tool | Draws | Spec highlights |
+|------|-------|-----------------|
+| `show_process` | A closed cycle or one-way flow the user steps through | `closed`, 2 to 8 `stages` with `detail`, arrow `links`, optional left and right `zones` |
+| `show_model` | Sliders, live numbers, and a line or bar chart | `inputs`, `outputs` with formulas, `chart` with an x range that may be a formula |
+| `show_simulation` | A repeatable probability experiment that converges on expected rates | `draws` using `rand()` and `randint(a, b)`, `options` with win conditions and `expected` rates |
+| `show_parts` | A proportion bar with values and shares, plus a case switcher | `cases` of `parts`, `unit`, `totalLabel` |
+
+Formulas are parsed by a small expression evaluator (arithmetic, comparisons, `&&`, `||`, `?:`, and math functions); nothing is passed to `eval`. The server validates every spec before the view draws it: a spec that references a missing zone or an undefined name returns an error result that names the field to fix. MCP Apps hosts get a one-line confirmation; other clients get a plain-text version (the stages in order, computed outputs, or simulated win counts).
+
+```javascript
+await client.callTool("show_process", {
+  closed: true,
+  stages: [
+    { label: "Compressor", detail: "Squeezing the vapor heats it.", tone: "hot" },
+    { label: "Condenser coils", detail: "Heat flows into the room.", tone: "warm" },
+    { label: "Expansion valve", detail: "The pressure drops and the liquid chills.", tone: "cold" },
+    { label: "Evaporator coils", detail: "The refrigerant soaks up heat.", tone: "cold" },
+  ],
+  links: [{ label: "hot gas" }, { label: "warm liquid" }, { label: "cold mist" }, { label: "cool vapor" }],
+});
+```
+
 ### Resource: `skills://list`
 
 Returns a JSON array of available skill names.
@@ -260,13 +287,18 @@ apps/mcp/
 ├── .env.example         # Configuration template
 ├── Dockerfile           # Container definition
 ├── skills/              # Skill instruction files (copied from source)
+├── scripts/
+│   └── build-kit.mjs    # Bundles the browser kit into dist/kit.js
 └── src/
     ├── index.ts         # HTTP server entry point (Hono)
     ├── stdio.ts         # stdio transport entry point (Claude Desktop)
     ├── server.ts        # MCP server construction (shared)
     ├── skills.ts        # Skill file loader
-    └── renderer.ts      # Design system CSS + assembleDocument
+    ├── renderer.ts      # Design system CSS, assembleDocument, MCP Apps views
+    └── kit/             # Component kit: specs, layout, formulas, browser components
 ```
+
+The MCP Apps views inline `dist/kit.js`, so `build`, `dev`, and `test` bundle the kit first; run `pnpm build:kit` after editing `src/kit/browser/` while a server is running.
 
 ### Extending Skills
 

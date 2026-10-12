@@ -136,6 +136,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.31
+      esbuild:
+        specifier: ^0.27.3
+        version: 0.27.3
       tsx:
         specifier: ^4
         version: 4.21.0

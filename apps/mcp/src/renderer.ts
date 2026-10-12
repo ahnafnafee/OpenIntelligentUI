@@ -1,7 +1,10 @@
 // OpenIntelligentUI document assembly for the MCP server.
 // Design-system CSS is single-sourced from @repo/design-system.
 
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { THEME_CSS, SVG_CLASSES_CSS, FORM_STYLES_CSS } from "@repo/design-system";
+import type { KitComponent } from "./kit/spec.js";
 
 // Origins generated UI may load scripts and assets from, in both rendering paths.
 export const CDN_ORIGINS = [
@@ -75,9 +78,11 @@ export function assembleDocument(html: string): string {
 </html>`;
 }
 
-// MCP Apps view for assemble_document. The host renders it in a sandboxed iframe
-// and delivers the tool arguments, so the fragment arrives as args.html.
-export const MCP_APP_VIEW_HTML = `<!DOCTYPE html>
+export const SDK_ORIGIN = new URL(EXT_APPS_SDK_URL).origin;
+
+// Shell shared by every MCP App view. The host renders it in a sandboxed iframe
+// and delivers the tool arguments; `boot` decides what to draw from them.
+const viewHtml = (head: string, boot: string) => `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -88,7 +93,7 @@ export const MCP_APP_VIEW_HTML = `<!DOCTYPE html>
     ${SVG_CLASSES_CSS}
     ${FORM_STYLES_CSS}
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-  </style>
+  </style>${head}
 </head>
 <body>
   <div id="content"></div>
@@ -106,6 +111,21 @@ export const MCP_APP_VIEW_HTML = `<!DOCTYPE html>
       if (a) { e.preventDefault(); window.openLink(a.href); }
     });
 
+    function applyHostContext(ctx) {
+      if (ctx?.theme) applyDocumentTheme(ctx.theme);
+      if (ctx?.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
+      if (ctx?.styles?.css?.fonts) applyHostFonts(ctx.styles.css.fonts);
+    }
+${boot}
+    app.onhostcontextchanged = applyHostContext;
+    await app.connect();
+    applyHostContext(app.getHostContext());
+  </script>
+</body>
+</html>`;
+
+// View for assemble_document: the fragment arrives as args.html.
+export const MCP_APP_VIEW_HTML = viewHtml("", `
     // innerHTML never runs scripts, so each one is recreated in document order.
     // External classic scripts are awaited so later inline code can use their globals.
     async function render(html) {
@@ -122,18 +142,38 @@ export const MCP_APP_VIEW_HTML = `<!DOCTYPE html>
       }
     }
 
-    function applyHostContext(ctx) {
-      if (ctx?.theme) applyDocumentTheme(ctx.theme);
-      if (ctx?.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
-      if (ctx?.styles?.css?.fonts) applyHostFonts(ctx.styles.css.fonts);
-    }
-
     app.ontoolinput = ({ arguments: args }) => {
       if (typeof args?.html === "string") render(args.html);
+    };`);
+
+let kitJs: string | undefined;
+
+// The browser kit is prebuilt by scripts/build-kit.mjs and inlined into each view.
+function kitScript(): string {
+  if (kitJs === undefined) {
+    const file = new URL("../dist/kit.js", import.meta.url);
+    try {
+      kitJs = readFileSync(file, "utf8").replace(/<\/script/gi, "<\\/script");
+    } catch {
+      throw new Error(`Kit bundle not found at ${fileURLToPath(file)}; run "pnpm build:kit" in apps/mcp`);
+    }
+  }
+  return kitJs;
+}
+
+// View for a kit tool: the arguments are the component's spec. A spec the server
+// rejects still reaches the view first, so the error result replaces the drawing.
+export const kitViewHtml = (component: KitComponent) => viewHtml(`
+  <script>${kitScript()}</script>`, `
+    const host = { sendPrompt: window.sendPrompt, openLink: window.openLink };
+    let drawn = Promise.resolve();
+    app.ontoolinput = ({ arguments: args }) => {
+      applyHostContext(app.getHostContext());
+      drawn = OGUIKit.render(${JSON.stringify(component)}, args ?? {}, content, host);
     };
-    app.onhostcontextchanged = applyHostContext;
-    await app.connect();
-    applyHostContext(app.getHostContext());
-  </script>
-</body>
-</html>`;
+    app.ontoolresult = async (result) => {
+      if (!result.isError) return;
+      await drawn;
+      const text = result.content?.find((c) => c.type === "text")?.text;
+      OGUIKit.showError(content, text ?? "This ${component} could not be drawn.");
+    };`);
