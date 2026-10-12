@@ -7,7 +7,6 @@ import { createMcpServer } from "./server.js";
 const PORT = Number(process.env.MCP_PORT) || 3100;
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") || ["*"];
 
-const server = createMcpServer();
 const sessions = new Map<string, WebStandardStreamableHTTPServerTransport>();
 
 const app = new Hono();
@@ -39,8 +38,9 @@ app.all("/mcp", async (c) => {
     return sessions.get(sessionId)!.handleRequest(c.req.raw);
   }
 
+  // A server holds one transport at a time, so each connection gets its own.
   const transport = new WebStandardStreamableHTTPServerTransport();
-  await server.connect(transport);
+  await createMcpServer().connect(transport);
 
   const response = await transport.handleRequest(c.req.raw);
 
