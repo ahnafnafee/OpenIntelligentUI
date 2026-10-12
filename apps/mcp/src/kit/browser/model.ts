@@ -16,8 +16,9 @@ export function renderModel(root: HTMLElement, spec: ModelSpec, host: Host) {
   const ordered = [...outputs.filter((o) => o.emphasis), ...outputs.filter((o) => !o.emphasis)];
   const chart = spec.chart && {
     ...spec.chart,
-    from: typeof spec.chart.x.from === "string" ? compile(spec.chart.x.from) : () => spec.chart!.x.from as number,
-    to: typeof spec.chart.x.to === "string" ? compile(spec.chart.x.to) : () => spec.chart!.x.to as number,
+    // The view gets the raw arguments, where a bound may still be a JSON number.
+    from: compile(String(spec.chart.x.from)),
+    to: compile(String(spec.chart.x.to)),
     series: spec.chart.series.map((ser) => ({ label: ser.label, f: compile(ser.formula) })),
   };
 

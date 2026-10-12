@@ -89,6 +89,19 @@ describe("kit tools", () => {
     }
   });
 
+  it("inlines every input schema so clients that drop $ref and anyOf still see each field", async () => {
+    const { tools } = await (await connect()).listTools();
+    for (const c of COMPONENTS) {
+      const schema = JSON.stringify(tools.find((t) => t.name === `show_${c}`)!.inputSchema);
+      expect(schema, c).not.toContain("$ref");
+      expect(schema, c).not.toContain("anyOf");
+    }
+    const process = tools.find((t) => t.name === "show_process")!.inputSchema as {
+      properties: { links: { items: { properties: { tone: { enum?: string[] } } } } };
+    };
+    expect(process.properties.links.items.properties.tone.enum).toContain("hot");
+  });
+
   it("serves each kit view with the kit runtime, its component, and no border", async () => {
     const client = await connect();
     for (const c of COMPONENTS) {

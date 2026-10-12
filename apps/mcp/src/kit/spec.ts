@@ -9,9 +9,10 @@ import { simulate } from "./simulate.js";
 export const KIT_COMPONENTS = ["process", "model", "simulation", "parts"] as const;
 export type KitComponent = (typeof KIT_COMPONENTS)[number];
 
-const tone = z.enum(["cold", "cool", "warm", "hot", "neutral"]);
-const format = z.enum(["number", "integer", "currency", "percent"]);
-const id = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]{0,23}$/, "Use a short identifier such as rate or years");
+// Factories, not shared instances: the JSON Schema converter turns a reused zod
+// object into a $ref, and some clients drop $ref before the model reads the schema.
+const tone = () => z.enum(["cold", "cool", "warm", "hot", "neutral"]);
+const id = () => z.string().regex(/^[A-Za-z_][A-Za-z0-9_]{0,23}$/, "Use a short identifier such as rate or years");
 const followups = z.array(z.string().min(1).max(80)).max(3).optional()
   .describe("Up to three next questions; each becomes a button that asks Claude");
 const note = z.string().max(160).optional().describe("One short caption, such as 'Example numbers'");
@@ -24,48 +25,50 @@ export const processShape = {
     detail: z.string().min(1).max(280).describe("One or two sentences shown when this stage is selected"),
     chips: z.array(z.string().min(1).max(28)).max(4).optional().describe("Facts about this stage, such as 'High pressure'"),
     zone: z.number().int().min(0).max(7).optional().describe("Index into zones"),
-    tone: tone.optional(),
+    tone: tone().optional(),
   })).min(2).max(8),
   links: z.array(z.object({
     label: z.string().max(22).optional(),
     sublabel: z.string().max(22).optional(),
-    tone: tone.optional(),
+    tone: tone().optional(),
   })).max(8).optional().describe("Arrow i runs from stage i to the next stage; in a cycle the last arrow returns to the first stage"),
   zones: z.array(z.object({
     label: z.string().min(1).max(24),
     sublabel: z.string().max(24).optional(),
-    tone: tone.optional(),
+    tone: tone().optional(),
   })).max(2).optional().describe("Up to two regions, drawn as the left and right halves"),
   followups,
 };
 
-const formatFields = {
-  format: format.optional().describe("currency for money, percent for rates given as 0 to 100"),
+const formatFields = () => ({
+  format: z.enum(["number", "integer", "currency", "percent"]).optional().describe("currency for money, percent for rates given as 0 to 100"),
   unit: z.string().max(12).optional().describe("Suffix such as kg or km/h; with currency, a magnitude such as k or bn"),
-};
+});
+// A number or a formula; coerced to text so the schema has one type instead of a union.
+const bound = (what: string) => z.coerce.string().min(1).max(200).describe(`${what}: a number or a formula over the input ids`);
 
 export const modelShape = {
   inputs: z.array(z.object({
-    id, label: z.string().min(1).max(32),
+    id: id(), label: z.string().min(1).max(32),
     min: z.number(), max: z.number(), step: z.number().positive(), value: z.number(),
-    ...formatFields,
+    ...formatFields(),
   })).min(1).max(4),
   outputs: z.array(z.object({
     label: z.string().min(1).max(32),
     formula: z.string().min(1).max(400).describe("Formula over the input ids, such as start * (1 + rate/100)^years"),
     emphasis: z.boolean().optional().describe("Show as the headline number"),
-    ...formatFields,
+    ...formatFields(),
   })).min(1).max(4),
   chart: z.object({
     type: z.enum(["line", "bar"]),
     x: z.object({
-      id, label: z.string().min(1).max(32),
-      from: z.union([z.number(), z.string().max(200)]),
-      to: z.union([z.number(), z.string().max(200)]).describe("A number or a formula over the input ids"),
+      id: id(), label: z.string().min(1).max(32),
+      from: bound("Start of the x range"),
+      to: bound("End of the x range"),
       step: z.number().positive().optional(),
-      ...formatFields,
+      ...formatFields(),
     }),
-    y: z.object({ label: z.string().min(1).max(32), ...formatFields }).optional(),
+    y: z.object({ label: z.string().min(1).max(32), ...formatFields() }).optional(),
     series: z.array(z.object({
       label: z.string().min(1).max(24),
       formula: z.string().min(1).max(400).describe("Formula over the x id and the input ids"),
@@ -79,7 +82,7 @@ export const simulationShape = {
   question: z.string().max(90).optional().describe("Status line, such as 'Does switching beat staying?'"),
   trial: z.string().min(1).max(20).describe("What one run is called, such as 'game' or 'roll'"),
   draws: z.array(z.object({
-    id, formula: z.string().min(1).max(200).describe("Random value for each trial, such as randint(1, 3); may use earlier draws"),
+    id: id(), formula: z.string().min(1).max(200).describe("Random value for each trial, such as randint(1, 3); may use earlier draws"),
   })).min(1).max(6),
   options: z.array(z.object({
     label: z.string().min(1).max(20),
@@ -102,7 +105,7 @@ export const partsShape = {
     })).min(2).max(8),
   })).min(1).max(4).describe("One case is a single breakdown; several cases get a switcher"),
   totalLabel: z.string().max(24).optional(),
-  ...formatFields,
+  ...formatFields(),
   note,
   followups,
 };
@@ -153,10 +156,7 @@ export function validateSpec(component: KitComponent, spec: unknown): string[] {
     s.outputs.forEach((o, i) => checkFormula(`outputs.${i}.formula`, o.formula, ids, problems));
     if (s.chart) {
       if (ids.includes(s.chart.x.id)) problems.push("chart.x.id: must differ from the input ids");
-      for (const end of ["from", "to"] as const) {
-        const v = s.chart.x[end];
-        if (typeof v === "string") checkFormula(`chart.x.${end}`, v, ids, problems);
-      }
+      for (const end of ["from", "to"] as const) checkFormula(`chart.x.${end}`, s.chart.x[end], ids, problems);
       s.chart.series.forEach((ser, i) => checkFormula(`chart.series.${i}.formula`, ser.formula, [...ids, s.chart!.x.id], problems));
     }
   }
