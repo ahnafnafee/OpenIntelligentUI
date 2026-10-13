@@ -30,7 +30,7 @@ describe("assemble_document as an MCP App", () => {
     const { tools } = await (await connect()).listTools();
     const tool = tools.find((t) => t.name === "assemble_document");
     expect(tool?._meta).toMatchObject({
-      ui: { resourceUri: VIEW_URI },
+      ui: { resourceUri: VIEW_URI, prefersBorder: false },
       "ui/resourceUri": VIEW_URI,
     });
   });
@@ -43,6 +43,8 @@ describe("assemble_document as an MCP App", () => {
     expect(view.text).toContain("window.sendPrompt");
     expect(view.text).toContain("window.openLink");
     expect(view.text).toMatch(/\.sr-only\s*\{[^}]*clip:/);
+    // Borderless views run edge to edge, so the host's safe area becomes padding.
+    expect(view.text).toMatch(/safeAreaInsets[\s\S]*style\.padding/);
     expect(view._meta).toMatchObject({
       ui: {
         prefersBorder: false,

@@ -1,6 +1,6 @@
 import { compile, type Compiled } from "../expr.js";
 import type { ModelSpec } from "../spec.js";
-import { h, s, followups, srOnly, type Host } from "./dom.js";
+import { h, s, followups, srOnly, makeMeasure, type Host } from "./dom.js";
 import { fmt, niceTicks } from "../format.js";
 
 const SERIES = ["var(--ogk-c0)", "var(--ogk-c2)", "var(--ogk-c1)"];
@@ -51,9 +51,10 @@ export function renderModel(root: HTMLElement, spec: ModelSpec, host: Host) {
     container.append(svg);
   }
   if (spec.note) container.append(h("p", { class: "ogk-note" }, spec.note));
-  container.append(h("div", { class: "ogk-row" }, h("button", { type: "button", class: "ogk-quiet", onclick: reset }, "Reset")));
+  const row = h("div", { class: "ogk-row" }, h("button", { type: "button", class: "ogk-quiet", onclick: reset }, "Reset"));
   const follow = followups(spec.followups, host);
-  if (follow) container.append(follow);
+  if (follow) row.append(follow);
+  container.append(row);
 
   function reset() {
     sliders.forEach((sl) => { sl.input.value = String(sl.inp.value); scope[sl.inp.id] = sl.inp.value; });
@@ -61,12 +62,18 @@ export function renderModel(root: HTMLElement, spec: ModelSpec, host: Host) {
   }
 
   const safe = (f: Compiled, sc: Record<string, number>) => { try { return f(sc); } catch { return NaN; } };
+  const measure = makeMeasure(container);
+
+  // The chart is drawn at the container's own width so its text keeps its size,
+  // and redrawn when that width changes, as on a phone turning sideways.
+  let drawnWidth = 0;
+  if (chart) new ResizeObserver(() => { if (container.clientWidth !== drawnWidth) drawChart(); }).observe(container);
 
   function drawChart() {
     if (!chart) return;
-    const W = Math.min(680, Math.max(320, container.clientWidth || 680));
-    const H = 260;
-    const pad = { l: 64, r: 16, t: 12, b: 40 };
+    drawnWidth = container.clientWidth;
+    const W = Math.max(280, drawnWidth || 640);
+    const H = Math.round(Math.min(220, Math.max(180, W * 0.55)));
     let x0 = safe(chart.from, scope);
     let x1 = safe(chart.to, scope);
     if (!Number.isFinite(x0) || !Number.isFinite(x1)) { svg.replaceChildren(); return; }
@@ -84,21 +91,24 @@ export function renderModel(root: HTMLElement, spec: ModelSpec, host: Host) {
     const yTicks = niceTicks(lo, hi, 5);
     const yMin = yTicks[0];
     const yMax = yTicks[yTicks.length - 1];
-    const xTicks = niceTicks(x0, x1, Math.max(2, Math.floor((W - pad.l - pad.r) / 70))).filter((t) => t >= x0 - 1e-9 && t <= x1 + 1e-9);
+    const yFmt = spec.chart!.y?.format ?? outputs.find((o) => o.emphasis)?.format ?? outputs[0].format;
+    const yLabels = yTicks.map((t) => fmt(t, yFmt, spec.chart!.y?.unit));
+    const yTitle = spec.chart!.y?.label;
+    // The left margin fits the widest tick label, plus the rotated title when there is one.
+    const pad = { l: Math.ceil(Math.max(...yLabels.map((t) => measure(t, "small")))) + (yTitle ? 30 : 14), r: 16, t: 12, b: 40 };
+    const xTicks = niceTicks(x0, x1, Math.max(3, Math.floor((W - pad.l - pad.r) / 56))).filter((t) => t >= x0 - 1e-9 && t <= x1 + 1e-9);
     const sx = (x: number) => pad.l + ((x - x0) / (x1 - x0 || 1)) * (W - pad.l - pad.r);
     const sy = (y: number) => pad.t + (1 - (y - yMin) / (yMax - yMin || 1)) * (H - pad.t - pad.b);
-    const yFmt = spec.chart!.y?.format ?? outputs.find((o) => o.emphasis)?.format ?? outputs[0].format;
-    const yUnit = spec.chart!.y?.unit;
 
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     const parts: SVGElement[] = [];
-    yTicks.forEach((t) => {
+    yTicks.forEach((t, i) => {
       parts.push(s("line", { class: "ogk-gridline", x1: pad.l, x2: W - pad.r, y1: sy(t), y2: sy(t) }));
-      parts.push(s("text", { class: "ogk-axis", x: pad.l - 8, y: sy(t), "text-anchor": "end", "dominant-baseline": "central" }, fmt(t, yFmt, yUnit)));
+      parts.push(s("text", { class: "ogk-axis", x: pad.l - 8, y: sy(t), "text-anchor": "end", "dominant-baseline": "central" }, yLabels[i]));
     });
     xTicks.forEach((t) => parts.push(s("text", { class: "ogk-axis", x: sx(t), y: H - pad.b + 18, "text-anchor": "middle" }, fmt(t, chart.x.format ?? "number", chart.x.unit))));
     parts.push(s("text", { class: "ogk-axis", x: (pad.l + W - pad.r) / 2, y: H - 4, "text-anchor": "middle" }, chart.x.label));
-    if (spec.chart!.y?.label) parts.push(s("text", { class: "ogk-axis", x: 12, y: (pad.t + H - pad.b) / 2, "text-anchor": "middle", transform: `rotate(-90 12 ${(pad.t + H - pad.b) / 2})` }, spec.chart!.y.label));
+    if (yTitle) parts.push(s("text", { class: "ogk-axis", x: 12, y: (pad.t + H - pad.b) / 2, "text-anchor": "middle", transform: `rotate(-90 12 ${(pad.t + H - pad.b) / 2})` }, yTitle));
 
     if (chart.type === "line") {
       data.forEach((ys, si) => {

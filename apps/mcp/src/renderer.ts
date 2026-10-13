@@ -115,6 +115,14 @@ const viewHtml = (head: string, boot: string) => `<!DOCTYPE html>
       if (ctx?.theme) applyDocumentTheme(ctx.theme);
       if (ctx?.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
       if (ctx?.styles?.css?.fonts) applyHostFonts(ctx.styles.css.fonts);
+      // Borderless views run edge to edge, so the host's safe area (device edges,
+      // chat margins, overlaid composer) becomes padding.
+      const inset = ctx?.safeAreaInsets;
+      if (inset) document.body.style.padding = [inset.top, inset.right, inset.bottom, inset.left].map((n) => (n || 0) + "px").join(" ");
+      // Content never gets wider than the container the host reports.
+      const box = ctx?.containerDimensions;
+      const width = box?.width || box?.maxWidth;
+      if (width) document.body.style.maxWidth = width + "px";
     }
 ${boot}
     app.onhostcontextchanged = applyHostContext;

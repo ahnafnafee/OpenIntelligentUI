@@ -25,6 +25,9 @@ import {
 
 const VIEW_URI = "ui://open-generative-ui/document.html";
 const UI_EXTENSION = "io.modelcontextprotocol/ui";
+// Views draw their own spacing. Most hosts read this from the resource; Claude
+// Code's desktop host reads it from the tool, so both carry it.
+const BORDERLESS = { prefersBorder: false };
 
 const KIT_TOOLS: Record<KitComponent, { shape: z.ZodRawShape; noun: string; description: string }> = {
   process: {
@@ -187,7 +190,7 @@ export function createMcpServer(): McpServer {
           text: MCP_APP_VIEW_HTML,
           _meta: {
             ui: {
-              prefersBorder: false,
+              ...BORDERLESS,
               csp: { resourceDomains: CDN_ORIGINS, connectDomains: CDN_ORIGINS },
             },
           },
@@ -215,7 +218,7 @@ export function createMcpServer(): McpServer {
             "Self-contained HTML fragment with inline <style> and <script>",
           ),
       },
-      _meta: { ui: { resourceUri: VIEW_URI }, "ui/resourceUri": VIEW_URI },
+      _meta: { ui: { resourceUri: VIEW_URI, ...BORDERLESS }, "ui/resourceUri": VIEW_URI },
     },
     async ({ title, html }) => {
       // The view already shows the fragment, so UI hosts get a one-liner instead of
@@ -242,14 +245,14 @@ export function createMcpServer(): McpServer {
             uri,
             mimeType: MCP_APP_MIME_TYPE,
             text: kitViewHtml(component),
-            _meta: { ui: { prefersBorder: false, csp: { resourceDomains: [SDK_ORIGIN] } } },
+            _meta: { ui: { ...BORDERLESS, csp: { resourceDomains: [SDK_ORIGIN] } } },
           },
         ],
       }),
     );
     server.registerTool(
       `show_${component}`,
-      { description, inputSchema: shape, _meta: { ui: { resourceUri: uri }, "ui/resourceUri": uri } },
+      { description, inputSchema: shape, _meta: { ui: { resourceUri: uri, ...BORDERLESS }, "ui/resourceUri": uri } },
       async (args) => {
         const problems = validateSpec(component, args);
         if (problems.length) {

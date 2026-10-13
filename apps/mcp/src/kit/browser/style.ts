@@ -16,7 +16,9 @@ const DARK = `
 export const KIT_CSS = `
 .ogk{${LIGHT}
   --ogk-c0:#378ADD;--ogk-c1:#1D9E75;--ogk-c2:#EF9F27;--ogk-c3:#D85A30;--ogk-c4:#D4537E;--ogk-c5:#888780;--ogk-c6:#639922;--ogk-c7:#7F77DD;
-  font-family:var(--font-sans);color:var(--color-text-primary);padding:2px 0}
+  font-family:var(--font-sans);color:var(--color-text-primary);padding:2px 0;overflow-wrap:anywhere}
+/* Phone hosts hand horizontal drags to the view, so sideways overflow would pan the page instead of moving a slider. */
+body{overflow-x:clip}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ogk{${DARK}}}
 :root[data-theme="dark"] .ogk{${DARK}}
 .ogk-status{font-size:16px;font-weight:500;line-height:1.5;margin:0 0 12px}
@@ -47,23 +49,25 @@ export const KIT_CSS = `
 .ogk-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .ogk-chips span{font-size:12px;padding:2px 10px;border-radius:999px;background:var(--color-background-primary);color:var(--color-text-secondary);border:1px solid var(--color-border-tertiary)}
 .ogk-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
+.ogk-row:last-child{margin-bottom:0}
+.ogk-row .ogk-follow{margin:0}
 .ogk-primary,.ogk-primary:hover{background:var(--color-text-primary);color:var(--color-background-primary);border-color:transparent}
 .ogk-primary:hover{opacity:.88}
 .ogk-quiet{border-color:transparent}
 .ogk-follow{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .ogk-follow button{font-size:13px;border-radius:999px;padding:6px 14px}
 .ogk-error{font-size:14px;line-height:1.5;color:var(--color-text-danger);background:var(--color-background-danger);border-radius:10px;padding:10px 14px}
-.ogk-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 24px;margin:0 0 16px}
+.ogk-inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:14px 24px;margin:0 0 16px}
 .ogk-input label{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--color-text-secondary);margin:0 0 8px}
 .ogk-input label b{font-weight:500;color:var(--color-text-primary)}
 .ogk-input input{width:100%}
-.ogk-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 16px}
+.ogk-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr));gap:12px;margin:0 0 16px}
 .ogk-metric{background:var(--color-background-secondary);border-radius:12px;padding:12px 14px}
 .ogk-metric span{display:block;font-size:12px;color:var(--color-text-secondary)}
-.ogk-metric b{display:block;font-size:20px;font-weight:500;margin-top:2px}
+.ogk-metric b{display:block;font-size:clamp(16px,5.5vw,20px);font-weight:500;margin-top:2px}
 .ogk-metric.ogk-em{background:var(--ogk-cold-tint)}
 .ogk-metric.ogk-em span,.ogk-metric.ogk-em b{color:var(--ogk-cold-ink)}
-.ogk-metric.ogk-em b{font-size:26px}
+.ogk-metric.ogk-em b{font-size:clamp(18px,7vw,26px)}
 .ogk-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--color-text-secondary);margin:0 0 6px}
 .ogk-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
 .ogk-axis{font-size:11px;fill:var(--color-text-secondary)}
@@ -94,5 +98,14 @@ export const KIT_CSS = `
 .ogk-parts .ogk-share{text-align:right;color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
 .ogk-parts .ogk-pnote{grid-column:2/-1;font-size:12px;color:var(--color-text-secondary);margin-top:-6px}
 @media (max-width:520px){.ogk-sim{grid-template-columns:minmax(56px,auto) 56px minmax(0,1fr)}.ogk-sim .ogk-cnt{display:none}}
+@media (pointer:coarse){
+  .ogk button{min-height:44px}
+  .ogk input[type="range"]{height:44px;background:transparent}
+  .ogk input[type="range"]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--color-border-tertiary)}
+  .ogk input[type="range"]::-moz-range-track{height:4px;border-radius:2px;background:var(--color-border-tertiary)}
+  .ogk input[type="range"]::-webkit-slider-thumb{width:28px;height:28px;margin-top:-12px}
+  .ogk input[type="range"]::-moz-range-thumb{width:28px;height:28px}
+  .ogk-input label{margin-bottom:0}
+}
 @media (prefers-reduced-motion: reduce){.ogk *{transition:none!important;animation:none!important}}
 `;

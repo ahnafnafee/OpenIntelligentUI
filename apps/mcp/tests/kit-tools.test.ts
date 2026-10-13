@@ -85,7 +85,8 @@ describe("kit tools", () => {
     const { tools } = await (await connect()).listTools();
     for (const c of COMPONENTS) {
       const tool = tools.find((t) => t.name === `show_${c}`);
-      expect(tool?._meta, c).toMatchObject({ ui: { resourceUri: `ui://open-generative-ui/kit/${c}.html` } });
+      // Claude Code's desktop host reads prefersBorder from the tool, not the resource.
+      expect(tool?._meta, c).toMatchObject({ ui: { resourceUri: `ui://open-generative-ui/kit/${c}.html`, prefersBorder: false } });
     }
   });
 

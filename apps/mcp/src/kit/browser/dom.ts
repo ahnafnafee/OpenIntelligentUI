@@ -34,7 +34,7 @@ export interface Host {
 export function followups(items: string[] | undefined, host: Host) {
   if (!items?.length) return null;
   return h("div", { class: "ogk-follow" }, ...items.map((q) =>
-    h("button", { type: "button", onclick: () => host.sendPrompt(q) }, `${q} ↗`)));
+    h("button", { type: "button", onclick: () => host.sendPrompt(q) }, `${q} ↗`)));
 }
 
 export function srOnly(text: string) {

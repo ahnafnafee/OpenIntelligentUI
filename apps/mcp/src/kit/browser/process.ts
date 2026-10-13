@@ -95,13 +95,14 @@ export function renderProcess(root: HTMLElement, spec: ProcessSpec, host: Host) 
   container.append(h("div", { class: "ogk-card", "aria-live": "polite" }, title, detail, chips));
 
   let current = 0;
-  container.append(h("div", { class: "ogk-row" },
+  const row = h("div", { class: "ogk-row" },
     h("button", { type: "button", onclick: () => select(current - 1) }, "Back"),
     h("button", { type: "button", class: "ogk-primary", onclick: () => select(current + 1) }, "Next stage"),
     h("button", { type: "button", class: "ogk-quiet", onclick: () => select(0) }, "Reset"),
-  ));
+  );
   const follow = followups(spec.followups, host);
-  if (follow) container.append(follow);
+  if (follow) row.append(follow);
+  container.append(row);
   container.addEventListener("keydown", (e) => {
     if (e.key === "ArrowRight") select(current + 1);
     if (e.key === "ArrowLeft") select(current - 1);
