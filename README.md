@@ -11,6 +11,9 @@ Built with [CopilotKit](https://github.com/CopilotKit/CopilotKit) and [AG-UI](ht
 [![CI](https://github.com/CopilotKit/OpenIntelligentUI/actions/workflows/ci.yml/badge.svg)](https://github.com/CopilotKit/OpenIntelligentUI/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+[![GitHub Trending: #5 Repository Of The Day](https://trendshift.io/api/badge/repositories/24005)](https://trendshift.io/repositories/24005)
+[![Trendshift: #3 TypeScript Repository Of The Day](https://trendshift.io/api/badge/trendshift/repositories/24005/daily?language=TypeScript)](https://trendshift.io/repositories/24005)
+
 Clone the project, connect your model and visualization router, and adapt the interface and agent to your own workflows.
 
 [**Building with Open Intelligent UI? Talk to an engineer →**](https://www.copilotkit.ai/talk-to-an-engineer?ref=openintelligentui_readme&utm_source=github&utm_medium=readme&utm_campaign=openintelligentui)
@@ -204,6 +207,7 @@ Built with CopilotKit. The `openGenerativeUI` runtime API and `generateSandboxed
 - [Documentation index](docs/README.md)
 - [Bring these patterns to your app](docs/bring-to-your-app.md)
 - [Source repository](https://github.com/CopilotKit/OpenIntelligentUI)
+- [Telemetry and how to turn it off](docs/telemetry.md)
 
 ## Contributing
 

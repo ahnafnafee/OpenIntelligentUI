@@ -70,6 +70,12 @@ services:
         value: "60000"
       - key: RATE_LIMIT_MAX
         value: "40"
+      # Telemetry (docs/telemetry.md): count the hosted demo separately from self-hosted installs.
+      - key: OIUI_DISTRIBUTION
+        value: hosted_demo
+      # PostHog project key for hosted-demo page analytics; needed at build time.
+      - key: NEXT_PUBLIC_POSTHOG_KEY
+        sync: false
     buildFilter:
       paths:
         - apps/app/**
