@@ -19,7 +19,7 @@ export const MCP_APP_MIME_TYPE = "text/html;profile=mcp-app";
 // ponytail: the view loads the MCP Apps SDK from jsDelivr when it opens, so rendering
 // needs network access; inline app-with-deps.js into the view if offline hosts matter.
 const EXT_APPS_SDK_URL =
-  "https://cdn.jsdelivr.net/npm/@modelcontextprotocol/ext-apps@2.0.3/dist/src/app-with-deps.js";
+  "https://cdn.jsdelivr.net/npm/@modelcontextprotocol/ext-apps@2.0.4/dist/src/app-with-deps.js";
 
 const BRIDGE_JS = `
 window.sendPrompt = function(text) {
