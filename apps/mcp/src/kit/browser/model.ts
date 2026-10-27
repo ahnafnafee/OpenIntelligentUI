@@ -67,7 +67,8 @@ export function renderModel(root: HTMLElement, spec: ModelSpec, host: Host) {
   // The chart is drawn at the container's own width so its text keeps its size,
   // and redrawn when that width changes, as on a phone turning sideways.
   let drawnWidth = 0;
-  if (chart) new ResizeObserver(() => { if (container.clientWidth !== drawnWidth) drawChart(); }).observe(container);
+  // The redraw waits a frame: resizing inside the callback would make the browser report a loop.
+  if (chart) new ResizeObserver(() => { if (container.clientWidth !== drawnWidth) requestAnimationFrame(drawChart); }).observe(container);
 
   function drawChart() {
     if (!chart) return;
