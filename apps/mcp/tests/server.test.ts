@@ -45,6 +45,9 @@ describe("assemble_document as an MCP App", () => {
     expect(view.text).toMatch(/\.sr-only\s*\{[^}]*clip:/);
     // Borderless views run edge to edge, so the host's safe area becomes padding.
     expect(view.text).toMatch(/safeAreaInsets[\s\S]*style\.padding/);
+    // Inline views are height-capped, so hosts that offer full screen get a button for it.
+    expect(view.text).toContain('availableDisplayModes: ["inline", "fullscreen"]');
+    expect(view.text).toMatch(/requestDisplayMode\(\{ mode: /);
     expect(view._meta).toMatchObject({
       ui: {
         prefersBorder: false,

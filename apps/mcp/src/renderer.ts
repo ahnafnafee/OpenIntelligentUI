@@ -93,15 +93,24 @@ const viewHtml = (head: string, boot: string) => `<!DOCTYPE html>
     ${SVG_CLASSES_CSS}
     ${FORM_STYLES_CSS}
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    #ogui-expand { display: block; margin: 0 0 8px auto; font-size: 13px; padding: 4px 12px; }
+    #ogui-expand[hidden] { display: none; }
+    @media (pointer: coarse) { #ogui-expand { min-height: 44px; } }
   </style>${head}
 </head>
 <body>
+  <button type="button" id="ogui-expand" hidden>Full screen</button>
   <div id="content"></div>
   <script type="module">
     import { App, applyDocumentTheme, applyHostStyleVariables, applyHostFonts } from "${EXT_APPS_SDK_URL}";
 
-    const app = new App({ name: "open-generative-ui", version: "0.1.0" });
+    const app = new App({ name: "open-generative-ui", version: "0.1.0" }, { availableDisplayModes: ["inline", "fullscreen"] });
     const content = document.getElementById("content");
+    // Hosts cap an inline view's height and cut off the rest, so where the host
+    // offers full screen, this button switches to it and back.
+    const expand = document.getElementById("ogui-expand");
+    const isFull = () => app.getHostContext()?.displayMode === "fullscreen";
+    expand.addEventListener("click", () => app.requestDisplayMode({ mode: isFull() ? "inline" : "fullscreen" }));
 
     window.sendPrompt = (text) =>
       app.sendMessage({ role: "user", content: [{ type: "text", text: String(text) }] });
@@ -123,6 +132,9 @@ const viewHtml = (head: string, boot: string) => `<!DOCTYPE html>
       const box = ctx?.containerDimensions;
       const width = box?.width || box?.maxWidth;
       if (width) document.body.style.maxWidth = width + "px";
+      // getHostContext() already includes this update.
+      expand.hidden = !app.getHostContext()?.availableDisplayModes?.includes("fullscreen");
+      expand.textContent = isFull() ? "Exit full screen" : "Full screen";
     }
 ${boot}
     app.onhostcontextchanged = applyHostContext;
