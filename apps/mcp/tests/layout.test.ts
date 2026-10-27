@@ -51,6 +51,18 @@ describe("layoutProcess invariants", () => {
     }
   });
 
+  it("holds for open flows of 9 to 12 stages with long labels", () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const r = rng(seed * 7919);
+      const n = 9 + Math.floor(r() * 4);
+      const stages = Array.from({ length: n }, () => ({ label: phrase(r, 32), sublabel: r() < 0.6 ? phrase(r, 30) : undefined }));
+      const links = Array.from({ length: n - 1 }, () => (r() < 0.6 ? { label: phrase(r, 22), sublabel: r() < 0.5 ? phrase(r, 22) : undefined } : {}));
+      const input: ProcessInput = { closed: false, stages, links, zones: [], maxWidth: 680 };
+      const problems = checkProcessLayout(layoutProcess(input, measure), input, measure);
+      expect(problems, `seed ${seed}: ${JSON.stringify(input)}`).toEqual([]);
+    }
+  });
+
   it("fits within the maximum width", () => {
     for (let seed = 1; seed <= 100; seed++) {
       const layout = layoutProcess(randomInput(seed), measure);

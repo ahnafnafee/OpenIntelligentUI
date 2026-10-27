@@ -22,6 +22,13 @@ export function fmt(value: number, format: Format = "number", unit?: string): st
 // ponytail: English regular plurals only (game, roll, toss, match); irregular nouns read oddly.
 export const plural = (word: string) => (/(s|x|z|ch|sh)$/i.test(word) ? `${word}es` : `${word}s`);
 
+// Stage labels without the "1 ", "2. " a caller may add, which would double the kit's own
+// numbering. Labels change only when every one carries its own position.
+export function unnumbered(labels: string[]): string[] {
+  const own = (i: number) => new RegExp(`^${i + 1}[.):]?\\s+(?=\\S)`);
+  return labels.every((l, i) => own(i).test(l)) ? labels.map((l, i) => l.replace(own(i), "")) : labels;
+}
+
 // Round axis bounds and ticks to 1, 2, or 5 times a power of ten.
 export function niceTicks(min: number, max: number, count = 5): number[] {
   if (min === max) { max = min + 1; }

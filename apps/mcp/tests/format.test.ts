@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fmt, niceTicks, plural } from "../src/kit/format";
+import { fmt, niceTicks, plural, unnumbered } from "../src/kit/format";
 
 describe("kit number formatting", () => {
   it("shows cents only for fractional amounts under 100", () => {
@@ -27,5 +27,17 @@ describe("kit number formatting", () => {
     expect(plural("game")).toBe("games");
     expect(plural("toss")).toBe("tosses");
     expect(plural("match")).toBe("matches");
+  });
+
+  it("drops stage numbers a caller added, since the kit numbers stages itself", () => {
+    const labels = Array.from({ length: 10 }, (_, i) => `${i + 1} Step`);
+    expect(unnumbered(labels)).toEqual(Array(10).fill("Step"));
+    expect(unnumbered(["1. Draft", "2) Review", "3: Ship"])).toEqual(["Draft", "Review", "Ship"]);
+  });
+
+  it("keeps labels whose numbers are content rather than a sequence", () => {
+    expect(unnumbered(["1 Draft", "Review"])).toEqual(["1 Draft", "Review"]);
+    expect(unnumbered(["2 eggs", "3 cups of flour"])).toEqual(["2 eggs", "3 cups of flour"]);
+    expect(unnumbered(["1 ", "2 Mix"])).toEqual(["1 ", "2 Mix"]);
   });
 });

@@ -3,8 +3,12 @@
 
 import * as z from "zod";
 import { compile, variables, ExprError } from "./expr.js";
-import { plural } from "./format.js";
+import { plural, unnumbered } from "./format.js";
+import { MAX_CYCLE_STAGES } from "./layout.js";
 import { simulate } from "./simulate.js";
+
+// Open flows wrap into rows, so they can run longer than a cycle's fixed placements.
+export const MAX_STAGES = 12;
 
 export const KIT_COMPONENTS = ["process", "model", "simulation", "parts"] as const;
 export type KitComponent = (typeof KIT_COMPONENTS)[number];
@@ -20,13 +24,13 @@ const note = z.string().max(160).optional().describe("One short caption, such as
 export const processShape = {
   closed: z.boolean().describe("true for a cycle that returns to the first stage, false for a one-way flow"),
   stages: z.array(z.object({
-    label: z.string().min(1).max(24),
+    label: z.string().min(1).max(32),
     sublabel: z.string().max(30).optional(),
     detail: z.string().min(1).max(280).describe("One or two sentences shown when this stage is selected"),
     chips: z.array(z.string().min(1).max(28)).max(4).optional().describe("Facts about this stage, such as 'High pressure'"),
     zone: z.number().int().min(0).max(7).optional().describe("Index into zones"),
     tone: tone().optional(),
-  })).min(2).max(8),
+  })).min(2).max(MAX_STAGES),
   links: z.array(z.object({
     label: z.string().max(22).optional(),
     sublabel: z.string().max(22).optional(),
@@ -138,6 +142,9 @@ export function validateSpec(component: KitComponent, spec: unknown): string[] {
   const problems: string[] = [];
   if (component === "process") {
     const s = parsed.data as ProcessSpec;
+    if (s.closed && s.stages.length > MAX_CYCLE_STAGES) {
+      problems.push(`stages: a cycle can have at most ${MAX_CYCLE_STAGES} stages, so draw a longer process as a flow with closed: false`);
+    }
     const maxLinks = s.closed ? s.stages.length : s.stages.length - 1;
     if ((s.links?.length ?? 0) > maxLinks) problems.push(`links: at most ${maxLinks} for ${s.stages.length} stages in a ${s.closed ? "cycle" : "flow"}`);
     s.stages.forEach((st, i) => {
@@ -186,7 +193,8 @@ const plain = (n: number) => (Number.isInteger(n) ? n.toLocaleString("en-US") : 
 export function describeSpec(component: KitComponent, spec: unknown): string {
   if (component === "process") {
     const s = spec as ProcessSpec;
-    const lines = s.stages.map((st, i) => `${i + 1}. ${st.label}${st.sublabel ? ` (${st.sublabel})` : ""}: ${st.detail}`);
+    const labels = unnumbered(s.stages.map((st) => st.label));
+    const lines = s.stages.map((st, i) => `${i + 1}. ${labels[i]}${st.sublabel ? ` (${st.sublabel})` : ""}: ${st.detail}`);
     return [`${s.closed ? "Cycle" : "Flow"} with ${s.stages.length} stages${s.closed ? ", returning to stage 1" : ""}:`, ...lines].join("\n");
   }
   if (component === "model") {

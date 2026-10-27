@@ -34,6 +34,7 @@ const CLOSED_SIDES: Record<number, number[]> = {
   2: [0, 1, 0, 1], 3: [1, 1, 0, 1], 4: [1, 1, 1, 1], 5: [1, 2, 1, 1],
   6: [1, 2, 1, 2], 7: [1, 3, 1, 2], 8: [1, 3, 1, 3],
 };
+export const MAX_CYCLE_STAGES = Math.max(...Object.keys(CLOSED_SIDES).map(Number));
 
 export function boxSize(stage: { label: string; sublabel?: string }, measure: Measure) {
   const text = Math.max(measure(stage.label, "label"), stage.sublabel ? measure(stage.sublabel, "sub") : 0);

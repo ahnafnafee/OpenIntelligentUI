@@ -15,6 +15,7 @@ import {
 import {
   describeSpec,
   KIT_COMPONENTS,
+  MAX_STAGES,
   modelShape,
   partsShape,
   processShape,
@@ -22,6 +23,7 @@ import {
   validateSpec,
   type KitComponent,
 } from "./kit/spec.js";
+import { MAX_CYCLE_STAGES } from "./kit/layout.js";
 
 const VIEW_URI = "ui://open-generative-ui/document.html";
 const UI_EXTENSION = "io.modelcontextprotocol/ui";
@@ -37,8 +39,9 @@ const KIT_TOOLS: Record<KitComponent, { shape: z.ZodRawShape; noun: string; desc
       "Draw an interactive diagram of a process that the user steps through one stage at a time. " +
       "Use it for how something works in stages: a closed cycle that returns to its start (refrigerator, " +
       "water cycle, heartbeat, Krebs cycle) or a one-way flow (how a bill becomes law, what happens when " +
-      "you open a web page). Give 2 to 8 short stage labels, one or two sentences of detail per stage, and " +
-      "optional labels for the arrows. The kit sizes the boxes, routes the arrows and places every label, " +
+      `you open a web page). Give 2 to ${MAX_CYCLE_STAGES} stages for a cycle or up to ${MAX_STAGES} for a flow, ` +
+      "each with a short label, one or two sentences of detail, and optional labels for the arrows. The kit " +
+      "numbers the stages, so leave numbers out of the labels. The kit sizes the boxes, routes the arrows and places every label, " +
       "so never hand-draw these diagrams. Zones split a cycle into a left and a right region, such as " +
       "inside and outside a fridge.",
   },

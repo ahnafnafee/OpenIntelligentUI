@@ -150,6 +150,23 @@ describe("kit tools", () => {
     expect((await call("show_parts", GDP)).text).toContain("Consumption: 700 $bn (64%)");
   });
 
+  it("accepts a flow of up to 12 stages with labels up to 32 characters", async () => {
+    const stages = Array.from({ length: 12 }, (_, i) => ({
+      label: `${i + 1} Backend: rules, then the classifier`.slice(0, 32),
+      detail: "One sentence about this step.",
+    }));
+    const { isError, text } = await call("show_process", { closed: false, stages }, UI_HOST);
+    expect(isError, text).toBe(false);
+  });
+
+  it("keeps a cycle to 8 stages and points a longer one to a flow", async () => {
+    const stages = Array.from({ length: 9 }, (_, i) => ({ label: `Stage ${i + 1}`, detail: "One sentence." }));
+    const { isError, text } = await call("show_process", { closed: true, stages });
+    expect(isError).toBe(true);
+    expect(text).toMatch(/at most 8 stages/);
+    expect(text).toMatch(/closed: false/);
+  });
+
   it("rejects specs that reference missing zones or undefined names", async () => {
     const badZone = await call("show_process", { ...FRIDGE, stages: FRIDGE.stages.map((s) => ({ ...s, zone: 3 })) });
     expect(badZone.isError).toBe(true);

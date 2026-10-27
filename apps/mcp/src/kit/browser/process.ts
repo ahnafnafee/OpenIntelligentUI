@@ -1,11 +1,14 @@
 import { layoutProcess, roundedPath, LINE_H } from "../layout.js";
 import type { ProcessSpec } from "../spec.js";
+import { unnumbered } from "../format.js";
 import { h, s, followups, srOnly, makeMeasure, type Host } from "./dom.js";
 
 type Tone = "cold" | "cool" | "warm" | "hot" | "neutral";
 let uid = 0;
 
 export function renderProcess(root: HTMLElement, spec: ProcessSpec, host: Host) {
+  const labels = unnumbered(spec.stages.map((st) => st.label));
+  spec = { ...spec, stages: spec.stages.map((st, i) => ({ ...st, label: labels[i] })) };
   const n = spec.stages.length;
   const links = Array.from({ length: spec.closed ? n : n - 1 }, (_, i) => spec.links?.[i] ?? {});
   const zones = spec.zones ?? [];
