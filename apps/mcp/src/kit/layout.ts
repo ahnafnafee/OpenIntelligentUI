@@ -266,7 +266,8 @@ function layoutOpen(input: ProcessInput, measure: Measure): ProcessLayout {
   const labels = Array.from({ length: n - 1 }, (_, i) => textBlock([input.links[i]?.label, input.links[i]?.sublabel], measure));
   const limit = input.maxWidth - 2 * MARGIN;
   let gap = 64;
-  let rowGap = 56;
+  // Starts tight: the loop below widens it only when an arrow label needs the room.
+  let rowGap = 32;
   let compact: ProcessLayout | undefined;
   let last: ProcessLayout | undefined;
   for (let attempt = 0; attempt < 48; attempt++) {

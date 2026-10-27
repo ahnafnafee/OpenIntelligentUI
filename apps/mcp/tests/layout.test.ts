@@ -134,6 +134,15 @@ describe("layoutProcess placement", () => {
     expect(checkProcessLayout(layout, flow, measure).filter((p) => !p.startsWith("width"))).toEqual([]);
   });
 
+  it("keeps a long flow's rows close when its arrows have no labels", () => {
+    const stages = Array.from({ length: 10 }, (_, i) => ({ label: `Stage number ${i + 1}`, sublabel: "what happens here" }));
+    const flow: ProcessInput = { closed: false, stages, links: Array.from({ length: 9 }, () => ({})), zones: [], maxWidth: 360 };
+    const layout = layoutProcess(flow, measure);
+    expect(checkProcessLayout(layout, flow, measure)).toEqual([]);
+    // One column on a phone: ten 58px boxes, nine 32px gaps, and the margins.
+    expect(layout.height).toBeLessThanOrEqual(10 * 58 + 9 * 32 + 2 * 16);
+  });
+
   it("chains an open flow without a closing link", () => {
     const flow: ProcessInput = { ...fridge, closed: false, zones: [], links: fridge.links.slice(0, 3) };
     const layout = layoutProcess(flow, measure);
