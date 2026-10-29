@@ -3,9 +3,10 @@ import {
   ExperimentalEmptyAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from "@copilotkit/runtime";
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { readProviderHeaders, PROVIDER_KEY_INPUT_ERROR } from "@/lib/provider-keys";
 import { buildRuntimeOptions } from "@/lib/copilotkit-runtime-options";
+import { getLaunchTelemetry, observeRunResult, runtimeMethod } from "@/lib/launch-telemetry";
 
 // Simple in-memory sliding-window rate limiter (per IP)
 // Enable via RATE_LIMIT_ENABLED=true — off by default.
@@ -55,11 +56,23 @@ export const POST = async (req: NextRequest) => {
     providerHeaders,
   });
 
+  // Install counting (docs/telemetry.md). Only the first run's request body is inspected.
+  const telemetry = getLaunchTelemetry();
+  const telemetryProperties = telemetry.runtimeProperties();
+  const watchRun = !telemetry.activated && (await runtimeMethod(req)) === "agent/run";
+
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
     endpoint: "/api/copilotkit",
     serviceAdapter: new ExperimentalEmptyAdapter(),
     runtime: new CopilotRuntime(runtimeOptions),
+    ...(telemetryProperties && { properties: { _copilotkit: telemetryProperties } }),
   });
 
-  return handleRequest(req);
+  const response = await handleRequest(req);
+  after(telemetry.recordOpened());
+  if (!watchRun || !response.body) return response;
+
+  const [client, observer] = response.body.tee();
+  after(observeRunResult(observer).then((ok) => (ok ? telemetry.recordActivated() : undefined)));
+  return new Response(client, { status: response.status, statusText: response.statusText, headers: response.headers });
 };

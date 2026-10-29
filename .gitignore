@@ -55,6 +55,9 @@ bun.lockb
 # Turbo
 .turbo
 
+# Telemetry installation id (docs/telemetry.md)
+.open-intelligent-ui
+
 # Tools
 .claude
 

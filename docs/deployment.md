@@ -74,8 +74,9 @@ Use a reachable agent URL appropriate to your network. Expose the frontend throu
 3. Check the chat layout at desktop and narrow widths. Exercise the composer, starter suggestions, and New chat. For generated tools, check keyboard controls, visible focus, numerical boundaries, and reset behavior.
 4. Make real provider-backed requests for a direct text answer, an explainer, a comparison, and a working calculator. Verify streaming reaches the interactive final sandbox. Confirm current-data requests do not fabricate evidence.
 5. Exercise a user-clicked follow-up with selected values. Confirm it starts a new turn/output, preserves earlier artifacts, and reports relevant errors. Check that ordinary controls do not send prompts.
-6. Deploy the reviewed revision. Confirm both health endpoints return `{"status":"ok"}`, then repeat a real prompt against the deployed frontend. Health checks alone do not test provider authentication, streaming, or browser behavior.
-7. Record the deployed revision, environment, checks actually performed, and remaining limitations. If validation fails, use the host's rollback workflow to restore a known working revision.
+6. Check analytics before launch: set `OIUI_DISTRIBUTION` and `NEXT_PUBLIC_POSTHOG_KEY` on the frontend, then confirm a page view and the two install events arrive in PostHog (see [Telemetry](telemetry.md)).
+7. Deploy the reviewed revision. Confirm both health endpoints return `{"status":"ok"}`, then repeat a real prompt against the deployed frontend. Health checks alone do not test provider authentication, streaming, or browser behavior.
+8. Record the deployed revision, environment, checks actually performed, and remaining limitations. If validation fails, use the host's rollback workflow to restore a known working revision.
 
 A rendered chat interface alone is not a model smoke test; verify a real response. Do not describe local test success as a deployed launch. See [Getting started](getting-started.md) and [Architecture](architecture.md) for setup and runtime details.
 

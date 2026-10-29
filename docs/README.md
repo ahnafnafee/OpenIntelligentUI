@@ -11,6 +11,7 @@ Local prerequisites: Node.js 22+, pnpm 9+, Python 3.12+, uv, an OpenAI key for t
 | [Visualization routing](visualization-routing.md) | Jev, A2UI tables, charts, diagrams, and maps |
 | [Architecture](architecture.md)                      | Agent, runtime, streaming renderer, and sandbox        |
 | [Deployment](deployment.md)                          | Configuration and launch verification                  |
+| [Telemetry](telemetry.md)                            | What usage data is sent and how to turn it off         |
 | [Bring to your app](bring-to-your-app.md)            | Adopt the integration patterns                         |
 | [Agent state](agent-state.md)                        | Shared state examples                                  |
 | [Generative UI](generative-ui.md)                    | Native component examples                              |

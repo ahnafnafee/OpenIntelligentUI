@@ -9,6 +9,7 @@ import { OpenGenUIPromptBridge } from "@/lib/sandbox/prompt-bridge";
 import { tableCatalog } from "@/components/generative-ui/table-catalog";
 import { ProviderKeysProvider, useProviderKeys } from "@/components/chat/provider-keys";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { PostHogAnalytics } from "./posthog-analytics";
 
 const a2ui = { catalog: tableCatalog };
 
@@ -21,6 +22,7 @@ const openGenerativeUI = {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
+      <PostHogAnalytics />
       <ProviderKeysProvider>
         <ChatProviders>{children}</ChatProviders>
       </ProviderKeysProvider>
